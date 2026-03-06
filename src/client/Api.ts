@@ -52,41 +52,45 @@ export async function fetchPlayerById(
   }
 }
 
-let __userMe: Promise<UserMeResponse | false> | null = null;
+let __userMe: Promise<UserMeResponse> | null = null;
+
+export function invalidateUserMe(): void {
+  __userMe = null;
+}
+
 export async function getUserMe(): Promise<UserMeResponse | false> {
   if (__userMe !== null) {
     return __userMe;
   }
-  __userMe = (async () => {
-    try {
-      const userAuthResult = await userAuth();
-      if (!userAuthResult) return false;
-      const { jwt } = userAuthResult;
+  try {
+    const userAuthResult = await userAuth();
+    if (!userAuthResult) return false;
+    const { jwt } = userAuthResult;
 
-      // Get the user object
-      const response = await fetch(getApiBase() + "/users/@me", {
-        headers: {
-          authorization: `Bearer ${jwt}`,
-        },
-      });
-      if (response.status === 401) {
-        await logOut();
-        return false;
-      }
-      if (response.status !== 200) return false;
-      const body = await response.json();
-      const result = UserMeResponseSchema.safeParse(body);
-      if (!result.success) {
-        const error = z.prettifyError(result.error);
-        console.error("Invalid response", error);
-        return false;
-      }
-      return result.data;
-    } catch (e) {
+    // Get the user object
+    const response = await fetch(getApiBase() + "/users/@me", {
+      headers: {
+        authorization: `Bearer ${jwt}`,
+      },
+    });
+    if (response.status === 401) {
+      await logOut();
       return false;
     }
-  })();
-  return __userMe;
+    if (response.status !== 200) return false;
+    const body = await response.json();
+    const result = UserMeResponseSchema.safeParse(body);
+    if (!result.success) {
+      const error = z.prettifyError(result.error);
+      console.error("Invalid response", error);
+      return false;
+    }
+    // Cache only on success so transient failures are retried next call.
+    __userMe = Promise.resolve(result.data);
+    return result.data;
+  } catch (e) {
+    return false;
+  }
 }
 
 export async function createCheckoutSession(

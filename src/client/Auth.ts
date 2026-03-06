@@ -2,7 +2,7 @@ import { decodeJwt } from "jose";
 import { z } from "zod";
 import { TokenPayload, TokenPayloadSchema } from "../core/ApiSchemas";
 import { base64urlToUuid } from "../core/Base64";
-import { getApiBase, getAudience } from "./Api";
+import { getApiBase, getAudience, invalidateUserMe } from "./Api";
 import { generateCryptoRandomUUID } from "./Utils";
 
 export type UserAuth = { jwt: string; claims: TokenPayload } | false;
@@ -61,6 +61,7 @@ export async function logOut(allSessions: boolean = false): Promise<boolean> {
     return false;
   } finally {
     __jwt = null;
+    invalidateUserMe();
     localStorage.removeItem(PERSISTENT_ID_KEY);
   }
 }

@@ -453,7 +453,7 @@ class Client {
         // Authorized
         console.log(
           `Your player ID is ${userMeResponse.player.publicId}\n` +
-            "Sharing this ID will allow others to view your game history and stats.",
+          "Sharing this ID will allow others to view your game history and stats.",
         );
       }
     };
@@ -462,8 +462,7 @@ class Client {
       // Not logged in
       onUserMe(false);
     } else {
-      // JWT appears to be valid
-      // TODO: Add caching
+      // JWT appears to be valid; fetch user profile (cached in Api.ts).
       getUserMe().then(onUserMe);
     }
 
